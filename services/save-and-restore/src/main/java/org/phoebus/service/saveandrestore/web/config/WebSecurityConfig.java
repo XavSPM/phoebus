@@ -282,13 +282,15 @@ public class WebSecurityConfig {
 
 
     /**
-     * Configures role hierarchy, i.e. user -> superuser -> admin. Do not remove this {@link Bean}!
-     * <p>
+     * Configures role hierarchy, i.e. user - superuser - admin. Do not remove this {@link Bean}!
      * <h2>NOTE!</h2>
      * Some Spring Security documentation will state that &quot;and&quot; can be used instead of new-line char to
      * separate rule items. But that does NOT work, at least not with the Spring Security version used in this project.
+<<<<<<< HEAD
      * </p>
      *
+=======
+>>>>>>> branch 'CSSTUDIO-1684' of https://github.com/ControlSystemStudio/phoebus.git
      * @return A {@link RoleHierarchy} object.
      */
     @Bean
