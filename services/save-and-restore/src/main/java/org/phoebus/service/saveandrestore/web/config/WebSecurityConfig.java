@@ -2,12 +2,14 @@ package org.phoebus.service.saveandrestore.web.config;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyAuthoritiesMapper;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -17,24 +19,29 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.ldap.DefaultSpringSecurityContextSource;
 import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAuthenticationProvider;
 import org.springframework.security.ldap.userdetails.DefaultLdapAuthoritiesPopulator;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-@EnableWebSecurity
+@EnableWebSecurity(debug = true)
 @Configuration
 @EnableGlobalMethodSecurity(
         prePostEnabled = true,
         securedEnabled = true,
         jsr250Enabled = true)
 @SuppressWarnings("unused")
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+public class WebSecurityConfig {
 
     /**
      * External Active Directory configuration properties
@@ -118,28 +125,33 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Value("${demo.readOnly.password:1234}")
     private String demoReadOnlyPassword;
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+    @Bean
+    public WebSecurityCustomizer ignoringCustomizer() {
+        return web -> {
+            web.debug(true);
+            web.ignoring().antMatchers(HttpMethod.GET, "/**");
+            web.ignoring().antMatchers(HttpMethod.POST, "/**/login*");
+        };
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
         http.csrf().disable();
         http.authorizeRequests().anyRequest().authenticated();
-        http.addFilterBefore(new SessionFilter(authenticationManager()), UsernamePasswordAuthenticationFilter.class);
+//        http.addFilterBefore(new SessionFilter(authenticationManager()), UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
     }
 
-    @Override
-    public void configure(WebSecurity web) {
-        // The below lists exceptions for authentication.
-        web.ignoring().antMatchers(HttpMethod.GET, "/**");
-        web.ignoring().antMatchers(HttpMethod.POST, "/**/login*");
-    }
-
-
-    @Override
+    @Autowired
     public void configure(AuthenticationManagerBuilder auth) throws Exception {
-        switch(authenitcationImplementation){
+        switch (authenitcationImplementation) {
             case "ad":
                 ActiveDirectoryLdapAuthenticationProvider adProvider = new ActiveDirectoryLdapAuthenticationProvider(ad_domain, ad_url);
                 adProvider.setConvertSubErrorCodesToExceptions(true);
                 adProvider.setUseAuthenticationRequestCredentials(true);
+
                 auth.authenticationProvider(adProvider);
                 break;
             case "ldap":
@@ -204,15 +216,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public AuthenticationManager authenticationManager() {
-        try {
-            return super.authenticationManager();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
     @SuppressWarnings("unused")
     @Bean
     @Scope("singleton")
@@ -223,57 +226,57 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    public String roleUser(){
+    public String roleUser() {
         return roleUser.toUpperCase();
     }
 
     @Bean
-    public String roleSuperuser(){
+    public String roleSuperuser() {
         return roleSuperuser.toUpperCase();
     }
 
     @Bean
-    public String roleAdmin(){
+    public String roleAdmin() {
         return roleAdmin.toUpperCase();
     }
 
     @Bean("demoUser")
-    public String demoUser(){
+    public String demoUser() {
         return demoUser;
     }
 
     @Bean("demoUserPassword")
-    public String demoUserPassword(){
+    public String demoUserPassword() {
         return demoUserPassword;
     }
 
     @Bean("demoSuperuser")
-    public String demoSuperuser(){
+    public String demoSuperuser() {
         return demoSuperuser;
     }
 
     @Bean("demoSuperuserPassword")
-    public String demoSuperuserPassword(){
+    public String demoSuperuserPassword() {
         return demoSuperuserPassword;
     }
 
     @Bean("demoAdmin")
-    public String demoAdmin(){
+    public String demoAdmin() {
         return demoAdmin;
     }
 
     @Bean("demoAdminPassword")
-    public String demoAdminPassword(){
+    public String demoAdminPassword() {
         return demoAdminPassword;
     }
 
     @Bean("demoReadOnly")
-    public String demoReadOnly(){
+    public String demoReadOnly() {
         return demoReadOnly;
     }
 
     @Bean("demoReadOnlyPassword")
-    public String demoReadOnlyPassword(){
+    public String demoReadOnlyPassword() {
         return demoReadOnlyPassword;
     }
 
@@ -285,13 +288,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
      * Some Spring Security documentation will state that &quot;and&quot; can be used instead of new-line char to
      * separate rule items. But that does NOT work, at least not with the Spring Security version used in this project.
      * </p>
+     *
      * @return A {@link RoleHierarchy} object.
      */
     @Bean
     public RoleHierarchy roleHierarchy() {
         RoleHierarchyImpl hierarchy = new RoleHierarchyImpl();
         hierarchy.setHierarchy("ROLE_" + roleAdmin.toUpperCase() + " > ROLE_" + roleSuperuser.toUpperCase() + "\n" +
-                "ROLE_" + roleSuperuser.toUpperCase() +" > ROLE_" + roleUser.toUpperCase() + "\n" +
+                "ROLE_" + roleSuperuser.toUpperCase() + " > ROLE_" + roleUser.toUpperCase() + "\n" +
                 "ROLE_" + roleAdmin.toUpperCase() + " > ROLE_" + roleUser.toUpperCase());
         return hierarchy;
     }
