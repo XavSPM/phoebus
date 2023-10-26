@@ -35,6 +35,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_AUTH_LOGIN;
+
 @SuppressWarnings("unused")
 @RestController
 public class AuthenticationController extends BaseController {
@@ -51,7 +53,7 @@ public class AuthenticationController extends BaseController {
      * @return A {@link ResponseEntity} carrying a {@link UserData} object if the login was successful,
      * otherwise the body will be <code>null</code>.
      */
-    @PostMapping(value = "login")
+    @PostMapping(value = SAR_AUTH_LOGIN)
     public ResponseEntity<UserData> login(@RequestParam(value = "username") String userName,
                                           @RequestParam(value = "password") String password) {
         Authentication authentication = new UsernamePasswordAuthenticationToken(userName, password);

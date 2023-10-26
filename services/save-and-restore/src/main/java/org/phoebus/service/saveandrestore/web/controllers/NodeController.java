@@ -30,6 +30,12 @@ import java.security.Principal;
 import java.util.List;
 import java.util.logging.Logger;
 
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_NODE;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_NODES;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_NODE_ID;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_NODE_ID_CHILDREN;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_NODE_ID_PARENT;
+
 /**
  * Controller offering endpoints for CRUD operations on {@link Node}s, which represent
  * objects in the tree structure of the save-and-restore data.
@@ -60,7 +66,7 @@ public class NodeController extends BaseController {
      * @return The new folder in the tree.
      */
     @SuppressWarnings("unused")
-    @PutMapping(value = "/node", produces = JSON)
+    @PutMapping(value = SAR_NODE, produces = JSON)
     @PreAuthorize("hasRole(this.roleUser)")
     public Node createNode(@RequestParam(name = "parentNodeId") String parentsUniqueId,
                            @RequestBody final Node node,
@@ -84,7 +90,7 @@ public class NodeController extends BaseController {
      * @return A {@link Node} object if a node with the specified id exists.
      */
     @SuppressWarnings("unused")
-    @GetMapping(value = "/node/{uniqueNodeId}", produces = JSON)
+    @GetMapping(value = SAR_NODE_ID, produces = JSON)
     public Node getNode(@PathVariable final String uniqueNodeId) {
         return nodeDAO.getNode(uniqueNodeId);
     }
@@ -98,19 +104,19 @@ public class NodeController extends BaseController {
      * @return A list of {@link Node} objects.
      */
     @SuppressWarnings("unused")
-    @GetMapping(value = "/nodes", produces = JSON)
+    @GetMapping(value = SAR_NODES, produces = JSON)
     public List<Node> getNodes(@RequestBody List<String> uniqueNodeIds) {
         return nodeDAO.getNodes(uniqueNodeIds);
     }
 
     @SuppressWarnings("unused")
-    @GetMapping(value = "/node/{uniqueNodeId}/parent", produces = JSON)
+    @GetMapping(value = SAR_NODE_ID_PARENT, produces = JSON)
     public Node getParentNode(@PathVariable String uniqueNodeId) {
         return nodeDAO.getParentNode(uniqueNodeId);
     }
 
     @SuppressWarnings("unused")
-    @GetMapping(value = "/node/{uniqueNodeId}/children", produces = JSON)
+    @GetMapping(value = SAR_NODE_ID_CHILDREN, produces = JSON)
     public List<Node> getChildNodes(@PathVariable final String uniqueNodeId) {
         return nodeDAO.getChildNodes(uniqueNodeId);
     }
@@ -130,7 +136,7 @@ public class NodeController extends BaseController {
      * @param uniqueNodeId The non-zero id of the node to delete
      */
     @SuppressWarnings("unused")
-    @DeleteMapping(value = "/node/{uniqueNodeId}", produces = JSON)
+    @DeleteMapping(value = SAR_NODE_ID, produces = JSON)
     @PreAuthorize("hasRole(this.roleAdmin) or this.mayDelete(#uniqueNodeId, #principal)")
     @Deprecated
     public void deleteNode(@PathVariable final String uniqueNodeId, Principal principal) {
@@ -139,7 +145,7 @@ public class NodeController extends BaseController {
     }
 
     @SuppressWarnings("unused")
-    @DeleteMapping(value = "/node", produces = JSON)
+    @DeleteMapping(value = SAR_NODE, produces = JSON)
     @PreAuthorize("hasRole(this.roleAdmin) or this.mayDelete(#nodeIds, #principal)")
     public void deleteNodes(@RequestBody List<String> nodeIds, Principal principal) {
         nodeDAO.deleteNodes(nodeIds);
@@ -219,7 +225,7 @@ public class NodeController extends BaseController {
      * @return A {@link Node} object representing the updated node.
      */
     @SuppressWarnings("unused")
-    @PostMapping(value = "/node", produces = JSON)
+    @PostMapping(value = SAR_NODE, produces = JSON)
     @PreAuthorize("hasRole(this.roleAdmin) or (hasRole(this.roleUser) and this.mayUpdate(#nodeToUpdate, #principal))")
     public Node updateNode(@RequestParam(value = "customTimeForMigration", required = false, defaultValue = "false") String customTimeForMigration,
                            @RequestBody Node nodeToUpdate,

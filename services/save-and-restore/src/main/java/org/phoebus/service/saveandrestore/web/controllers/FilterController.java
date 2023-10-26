@@ -29,6 +29,10 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_FILTER;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_FILTERS;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_FILTER_NAME;
+
 @RestController
 public class FilterController extends BaseController {
 
@@ -44,7 +48,7 @@ public class FilterController extends BaseController {
      * @return The saved {@link Filter}.
      */
     @SuppressWarnings("unused")
-    @PutMapping(value = "/filter", produces = JSON)
+    @PutMapping(value = SAR_FILTER, produces = JSON)
     @PreAuthorize("hasRole(this.roleAdmin) or (hasRole(this.roleUser) and this.maySaveOrDelete(#filter.getName(), #principal))")
     public Filter saveFilter(@RequestBody final Filter filter,
                              Principal principal) {
@@ -74,13 +78,13 @@ public class FilterController extends BaseController {
     }
 
     @SuppressWarnings("unused")
-    @GetMapping(value = "/filters", produces = JSON)
+    @GetMapping(value = SAR_FILTERS, produces = JSON)
     public List<Filter> getAllFilters() {
         return nodeDAO.getAllFilters();
     }
 
     @SuppressWarnings("unused")
-    @DeleteMapping(value = "/filter/{name}")
+    @DeleteMapping(value = SAR_FILTER_NAME)
     @PreAuthorize("hasRole(this.roleAdmin) or (hasRole(this.roleUser) and this.maySaveOrDelete(#name, #principal))")
     public void deleteFilter(@PathVariable final String name, Principal principal) {
         nodeDAO.deleteFilter(name);

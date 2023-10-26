@@ -9,6 +9,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -45,6 +49,16 @@ public class InfoController extends BaseController {
      */
     @GetMapping
     public String info() {
+
+
+        System.out.println(this.roleUser + " " + this.roleSuperuser + " " + this.roleAdmin);
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            auth.getAuthorities().stream().forEach(a -> {
+                System.out.println(a.getAuthority());
+            });
+        }
 
         Map<String, Object> saveRestoreServiceInfo = new LinkedHashMap<>();
         saveRestoreServiceInfo.put("name", name);

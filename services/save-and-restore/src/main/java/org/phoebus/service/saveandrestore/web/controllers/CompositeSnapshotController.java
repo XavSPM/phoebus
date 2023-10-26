@@ -34,6 +34,12 @@ import org.springframework.web.bind.annotation.RestController;
 import java.security.Principal;
 import java.util.List;
 
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_COMPOSITE_SNAPSHOT;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_COMPOSITE_SNAPSHOT_ID;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_COMPOSITE_SNAPSHOT_ID_ITEMS;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_COMPOSITE_SNAPSHOT_ID_NODES;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_COMPOSITE_SNAPSHOT_CHECK;
+
 @SuppressWarnings("unused")
 @RestController
 public class CompositeSnapshotController extends BaseController {
@@ -41,7 +47,7 @@ public class CompositeSnapshotController extends BaseController {
     @Autowired
     private NodeDAO nodeDAO;
 
-    @PutMapping(value = "/composite-snapshot", produces = JSON)
+    @PutMapping(value = SAR_COMPOSITE_SNAPSHOT, produces = JSON)
     @PreAuthorize("hasRole(this.roleUser)")
     public CompositeSnapshot createCompositeSnapshot(@RequestParam(value = "parentNodeId") String parentNodeId,
                                                      @RequestBody CompositeSnapshot compositeSnapshot,
@@ -53,7 +59,7 @@ public class CompositeSnapshotController extends BaseController {
         return nodeDAO.createCompositeSnapshot(parentNodeId, compositeSnapshot);
     }
 
-    @PostMapping(value = "/composite-snapshot", produces = JSON)
+    @PostMapping(value = SAR_COMPOSITE_SNAPSHOT, produces = JSON)
     @PreAuthorize("hasRole(this.roleAdmin) or (hasRole(this.roleUser) and this.mayUpdate(#compositeSnapshot, #principal))")
     public CompositeSnapshot updateCompositeSnapshot(@RequestBody CompositeSnapshot compositeSnapshot,
                                                      Principal principal) {
@@ -82,18 +88,18 @@ public class CompositeSnapshotController extends BaseController {
     }
 
 
-    @GetMapping(value = "/composite-snapshot/{uniqueId}", produces = JSON)
+    @GetMapping(value = SAR_COMPOSITE_SNAPSHOT_ID, produces = JSON)
     public CompositeSnapshotData getCompositeSnapshotData(@PathVariable String uniqueId) {
         return nodeDAO.getCompositeSnapshotData(uniqueId);
     }
 
-    @GetMapping(value = "/composite-snapshot/{uniqueId}/nodes", produces = JSON)
+    @GetMapping(value = SAR_COMPOSITE_SNAPSHOT_ID_NODES, produces = JSON)
     public List<Node> getCompositeSnapshotNodes(@PathVariable String uniqueId) {
         CompositeSnapshotData compositeSnapshotData = nodeDAO.getCompositeSnapshotData(uniqueId);
         return nodeDAO.getNodes(compositeSnapshotData.getReferencedSnapshotNodes());
     }
 
-    @GetMapping(value = "/composite-snapshot/{uniqueId}/items", produces = JSON)
+    @GetMapping(value = SAR_COMPOSITE_SNAPSHOT_ID_ITEMS, produces = JSON)
     public List<SnapshotItem> getCompositeSnapshotItems(@PathVariable String uniqueId) {
         return nodeDAO.getSnapshotItemsFromCompositeSnapshot(uniqueId);
     }
@@ -108,7 +114,7 @@ public class CompositeSnapshotController extends BaseController {
      * @return A list of PV names that occur more than once across the list of {@link Node}s corresponding
      * to the input. Empty if no duplicates are found.
      */
-    @PostMapping(value = "/composite-snapshot-consistency-check", produces = JSON)
+    @PostMapping(value = SAR_COMPOSITE_SNAPSHOT_CHECK, produces = JSON)
     public List<String> checkSnapshotsConsistency(@RequestBody List<String> snapshotNodeIds) {
         return nodeDAO.checkForPVNameDuplicates(snapshotNodeIds);
     }

@@ -34,8 +34,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
 
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_CONFIG;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_CONFIG_ID;
+
 @RestController
-@RequestMapping("/config")
 public class ConfigurationController extends BaseController {
 
     @SuppressWarnings("unused")
@@ -43,7 +45,7 @@ public class ConfigurationController extends BaseController {
     private NodeDAO nodeDAO;
 
     @SuppressWarnings("unused")
-    @PutMapping(produces = JSON)
+    @PutMapping(value = SAR_CONFIG, produces = JSON)
     @PreAuthorize("hasRole(this.roleUser)")
     public Configuration createConfiguration(@RequestParam(value = "parentNodeId") String parentNodeId,
                                              @RequestBody Configuration configuration,
@@ -53,13 +55,13 @@ public class ConfigurationController extends BaseController {
     }
 
     @SuppressWarnings("unused")
-    @GetMapping(value = "/{uniqueId}", produces = JSON)
+    @GetMapping(value = SAR_CONFIG_ID, produces = JSON)
     public ConfigurationData getConfigurationData(@PathVariable String uniqueId) {
         return nodeDAO.getConfigurationData(uniqueId);
     }
 
     @SuppressWarnings("unused")
-    @PostMapping(produces = JSON)
+    @PostMapping(value = SAR_CONFIG, produces = JSON)
     @PreAuthorize("hasRole(this.roleAdmin) or (hasRole(this.roleAdmin) or this.mayUpdate(#configuration, #principal))")
     public Configuration updateConfiguration(@RequestBody Configuration configuration,
                                              Principal principal) {

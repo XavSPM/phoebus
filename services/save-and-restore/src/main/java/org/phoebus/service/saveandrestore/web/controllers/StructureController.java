@@ -30,6 +30,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_MOVE;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_COPY;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_PATH;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_PATH_ID;
+
 /**
  * Controller offering endpoints for manipulating the tree structure of the
  * {@link Node} objects in the save-and-restore data.
@@ -52,7 +57,7 @@ public class StructureController extends BaseController {
      * @return The (updated) target node.
      */
     @SuppressWarnings("unused")
-    @PostMapping(value = "/move", produces = JSON)
+    @PostMapping(value = SAR_MOVE, produces = JSON)
     @PreAuthorize("hasRole(this.roleAdmin)")
     public Node moveNodes(@RequestParam(value = "to") String to,
                           @RequestBody List<String> nodes,
@@ -76,7 +81,7 @@ public class StructureController extends BaseController {
      * @return The (updated) target node.
      */
     @SuppressWarnings("unused")
-    @PostMapping(value = "/copy", produces = JSON)
+    @PostMapping(value = SAR_COPY, produces = JSON)
     public Node copyNodes(@RequestParam(value = "to") String to,
                           @RequestBody List<String> nodes,
                           Principal principal) {
@@ -99,7 +104,7 @@ public class StructureController extends BaseController {
      * is returned.
      */
     @SuppressWarnings("unused")
-    @GetMapping("/path/{uniqueNodeId}")
+    @GetMapping(SAR_PATH_ID)
     public String getFullPath(@PathVariable String uniqueNodeId) {
         String fullPath = nodeDAO.getFullPath(uniqueNodeId);
         if (fullPath == null) {
@@ -118,7 +123,7 @@ public class StructureController extends BaseController {
      * cannot be resolved to an existing node, HTTP 404 is returned.
      */
     @SuppressWarnings("unused")
-    @GetMapping(value = "/path", produces = JSON)
+    @GetMapping(value = SAR_PATH, produces = JSON)
     public List<Node> getFromPath(@RequestParam(value = "path") String path) {
         List<Node> nodes = nodeDAO.getFromPath(path);
         if (nodes == null) {

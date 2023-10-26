@@ -35,6 +35,8 @@ import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.UnsupportedTemporalTypeException;
 
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_SEARCH;
+
 @RestController
 public class SearchController extends BaseController {
 
@@ -44,7 +46,7 @@ public class SearchController extends BaseController {
     private NodeDAO nodeDAO;
 
     @SuppressWarnings("unused")
-    @GetMapping("/search")
+    @GetMapping(SAR_SEARCH)
     public SearchResult search(@RequestParam MultiValueMap<String, String> allRequestParams) {
         for (String key : allRequestParams.keySet()) {
             if ("start".equalsIgnoreCase(key) || "end".equalsIgnoreCase(key)) {

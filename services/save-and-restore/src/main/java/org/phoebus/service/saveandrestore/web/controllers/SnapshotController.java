@@ -29,6 +29,10 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
 
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_SNAPSHOT;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_SNAPSHOTS;
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_SNAPSHOT_ID;
+
 @SuppressWarnings("unused")
 @RestController
 public class SnapshotController extends BaseController {
@@ -36,17 +40,17 @@ public class SnapshotController extends BaseController {
     @Autowired
     private NodeDAO nodeDAO;
 
-    @GetMapping(value = "/snapshot/{uniqueId}", produces = JSON)
+    @GetMapping(value = SAR_SNAPSHOT_ID, produces = JSON)
     public SnapshotData getSnapshotData(@PathVariable String uniqueId) {
         return nodeDAO.getSnapshotData(uniqueId);
     }
 
-    @GetMapping(value = "/snapshots", produces = JSON)
+    @GetMapping(value = SAR_SNAPSHOTS, produces = JSON)
     public List<Node> getAllSnapshots() {
         return nodeDAO.getAllSnapshots();
     }
 
-    @PutMapping(value = "/snapshot", produces = JSON)
+    @PutMapping(value = SAR_SNAPSHOT, produces = JSON)
     @PreAuthorize("hasRole(this.roleAdmin) or (hasRole(this.roleUser) and this.maySave(#snapshot, #principal))")
     public Snapshot saveSnapshot(@RequestParam(value = "parentNodeId") String parentNodeId,
                                  @RequestBody Snapshot snapshot,

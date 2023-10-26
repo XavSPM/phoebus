@@ -31,6 +31,8 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
 
+import static org.phoebus.service.saveandrestore.web.controllers.SaveRestoreResourceDescriptors.SAR_TAGS;
+
 /**
  * {@link TagController} class for supporting RESTful APIs for tag
  *
@@ -44,7 +46,7 @@ public class TagController extends BaseController {
     @Autowired
     private NodeDAO nodeDAO;
 
-    @GetMapping("/tags")
+    @GetMapping(SAR_TAGS)
     public List<Tag> getTags() {
         return nodeDAO.getAllTags();
     }
@@ -55,7 +57,7 @@ public class TagController extends BaseController {
      * @param tagData See {@link TagData}
      * @return The list of updated {@link Node}s
      */
-    @PostMapping("/tags")
+    @PostMapping(SAR_TAGS)
     public List<Node> addTag(@RequestBody TagData tagData,
                              Principal principal) {
         if (tagData.getTag() == null ||
@@ -74,7 +76,7 @@ public class TagController extends BaseController {
      * @param tagData See {@link TagData}
      * @return The list of updated {@link Node}s
      */
-    @DeleteMapping("/tags")
+    @DeleteMapping(SAR_TAGS)
     public List<Node> deleteTag(@RequestBody TagData tagData) {
         if (tagData.getTag() == null ||
                 tagData.getTag().getName() == null ||
