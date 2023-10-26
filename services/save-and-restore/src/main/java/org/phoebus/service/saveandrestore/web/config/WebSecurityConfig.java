@@ -21,6 +21,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,6 +34,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @EnableWebSecurity(debug = true)
 @Configuration
@@ -42,6 +44,8 @@ import java.util.logging.Logger;
         jsr250Enabled = true)
 @SuppressWarnings("unused")
 public class WebSecurityConfig {
+
+    private String rolePrefix = "ROLE_";
 
     /**
      * External Active Directory configuration properties
@@ -151,7 +155,11 @@ public class WebSecurityConfig {
                 ActiveDirectoryLdapAuthenticationProvider adProvider = new ActiveDirectoryLdapAuthenticationProvider(ad_domain, ad_url);
                 adProvider.setConvertSubErrorCodesToExceptions(true);
                 adProvider.setUseAuthenticationRequestCredentials(true);
-
+                adProvider.setAuthoritiesMapper(authorities -> authorities.stream().map(grantedAuthority -> {
+                    String role = grantedAuthority.getAuthority();
+                    role = role.toUpperCase();
+                    return new SimpleGrantedAuthority(this.rolePrefix + role);
+                }).collect(Collectors.toList()));
                 auth.authenticationProvider(adProvider);
                 break;
             case "ldap":
