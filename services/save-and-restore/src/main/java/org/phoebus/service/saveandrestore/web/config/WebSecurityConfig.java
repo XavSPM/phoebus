@@ -4,48 +4,52 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpMethod;
+import org.springframework.ldap.core.support.BaseLdapPathContextSource;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
-import org.springframework.security.access.hierarchicalroles.RoleHierarchyAuthoritiesMapper;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.ObjectPostProcessor;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configurers.ldap.LdapAuthenticationProviderConfigurer;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
-import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.config.ldap.EmbeddedLdapServerContextSourceFactoryBean;
+import org.springframework.security.config.ldap.LdapBindAuthenticationManagerFactory;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.ldap.DefaultSpringSecurityContextSource;
 import org.springframework.security.ldap.authentication.ad.ActiveDirectoryLdapAuthenticationProvider;
+import org.springframework.security.ldap.server.UnboundIdContainer;
 import org.springframework.security.ldap.userdetails.DefaultLdapAuthoritiesPopulator;
+import org.springframework.security.ldap.userdetails.LdapAuthoritiesPopulator;
+import org.springframework.security.ldap.userdetails.PersonContextMapper;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-@EnableWebSecurity(debug = true)
+//@EnableWebSecurity(debug = true)
 @Configuration
+
 @EnableGlobalMethodSecurity(
         prePostEnabled = true,
         securedEnabled = true,
         jsr250Enabled = true)
+
+
 @SuppressWarnings("unused")
 public class WebSecurityConfig {
 
-    private String rolePrefix = "ROLE_";
+    private final String rolePrefix = "ROLE_";
 
     /**
      * External Active Directory configuration properties
@@ -148,6 +152,7 @@ public class WebSecurityConfig {
         return http.build();
     }
 
+    /*
     @Autowired
     public void configure(AuthenticationManagerBuilder auth) throws Exception {
         switch (authenitcationImplementation) {
@@ -219,7 +224,69 @@ public class WebSecurityConfig {
         }
     }
 
+     */
+
+
+
     @Bean
+    @ConditionalOnProperty(value = "auth.impl", havingValue = "ldap_embedded")
+    public DefaultSpringSecurityContextSource contextSourceFactoryBean() {
+        DefaultSpringSecurityContextSource contextSourceFactoryBean = new DefaultSpringSecurityContextSource(embedded_ldap_url);
+        contextSourceFactoryBean.afterPropertiesSet();
+        return contextSourceFactoryBean;
+    }
+
+    /*
+    @Bean
+    public EmbeddedLdapServerContextSourceFactoryBean contextSourceFactoryBeanEmbeddedLdap() throws Exception{
+        EmbeddedLdapServerContextSourceFactoryBean contextSourceFactoryBean =
+                EmbeddedLdapServerContextSourceFactoryBean.fromEmbeddedLdapServer();
+        return contextSourceFactoryBean;
+    }
+    */
+
+
+    @Bean
+    @ConditionalOnProperty(value = "auth.impl", havingValue = "ldap_embedded")
+    public AuthenticationManager ldapAuthenticationManager(
+            BaseLdapPathContextSource contextSource) {
+        LdapBindAuthenticationManagerFactory factory =
+                new LdapBindAuthenticationManagerFactory(contextSource);
+        factory.setUserDnPatterns(embedded_ldap_user_dn_pattern);
+        factory.setUserDetailsContextMapper(new PersonContextMapper());
+        factory.setLdapAuthoritiesPopulator(authorities(contextSource));
+        return factory.createAuthenticationManager();
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "auth.impl", havingValue = "ldap_embedded")
+    public LdapAuthoritiesPopulator authorities(BaseLdapPathContextSource contextSource) {
+        String groupSearchBase = "";
+        DefaultLdapAuthoritiesPopulator myAuthPopulator = new DefaultLdapAuthoritiesPopulator(contextSource, embedded_ldap_groups_search_base);
+        myAuthPopulator.setGroupSearchFilter(embedded_ldap_groups_search_pattern);
+        myAuthPopulator.setSearchSubtree(true);
+        myAuthPopulator.setIgnorePartialResultException(true);
+        return myAuthPopulator;
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "auth.impl", havingValue = "demo")
+    public AuthenticationManager demoAuthenticationManager(AuthenticationManagerBuilder auth) throws Exception {
+        return new AuthenticationManagerBuilder(new ObjectPostProcessor<>() {
+            @Override
+            public <O> O postProcess(O object) {
+                return object;
+            }
+        }).inMemoryAuthentication()
+                .passwordEncoder(encoder())
+                .withUser(demoAdmin).password(demoAdminPassword).roles(roleAdmin()).and()
+                .withUser(demoUser).password(encoder().encode(demoUserPassword)).roles(roleUser()).and()
+                .withUser(demoSuperuser).password(demoSuperuserPassword).roles(roleSuperuser()).and()
+                .withUser(demoReadOnly).password(demoReadOnlyPassword).roles().and().and().build();
+    }
+
+    @Bean
+    @Scope("singleton")
     public PasswordEncoder encoder() {
         return new BCryptPasswordEncoder();
     }
@@ -294,11 +361,8 @@ public class WebSecurityConfig {
      * <h2>NOTE!</h2>
      * Some Spring Security documentation will state that &quot;and&quot; can be used instead of new-line char to
      * separate rule items. But that does NOT work, at least not with the Spring Security version used in this project.
-<<<<<<< HEAD
      * </p>
      *
-=======
->>>>>>> branch 'CSSTUDIO-1684' of https://github.com/ControlSystemStudio/phoebus.git
      * @return A {@link RoleHierarchy} object.
      */
     @Bean
