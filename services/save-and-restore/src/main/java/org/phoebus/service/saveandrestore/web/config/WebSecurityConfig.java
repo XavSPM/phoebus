@@ -6,9 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.*;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.http.HttpMethod;
 import org.springframework.ldap.core.support.BaseLdapPathContextSource;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
@@ -37,15 +36,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-//@EnableWebSecurity(debug = true)
 @Configuration
-
-@EnableGlobalMethodSecurity(
-        prePostEnabled = true,
-        securedEnabled = true,
-        jsr250Enabled = true)
-
-
+@PropertySource({"classpath:${auth.impl:demo}.properties"})
 @SuppressWarnings("unused")
 public class WebSecurityConfig {
 
@@ -63,26 +55,27 @@ public class WebSecurityConfig {
      */
     @Value("${ldap.urls:ldaps://localhost:389/}")
     String ldap_url;
-    @Value("${ldap.base.dn}")
+    @Value("${ldap.base.dn:invalid}")
     String ldap_base_dn;
-    @Value("${ldap.user.dn.pattern}")
+    @Value("${ldap.user.dn.pattern:invalid}")
     String ldap_user_dn_pattern;
-    @Value("${ldap.groups.search.base}")
+    @Value("${ldap.groups.search.base:invalid}")
     String ldap_groups_search_base;
-    @Value("${ldap.groups.search.pattern}")
+    @Value("${ldap.groups.search.pattern:invalid}")
     String ldap_groups_search_pattern;
-    @Value("${ldap.manager.dn}")
+    @Value("${ldap.manager.dn:invalid}")
     String ldap_manager_dn;
-    @Value("${ldap.manager.password}")
+    @Value("${ldap.manager.password:invalid}")
     String ldap_manager_password;
-    @Value("${ldap.user.search.base}")
+    @Value("${ldap.user.search.base:invalid}")
     String ldap_user_search_base;
-    @Value("${ldap.user.search.filter}")
+    @Value("${ldap.user.search.filter:invalid}")
     String ldap_user_search_filter;
 
     /**
      * Embedded LDAP configuration properties
      */
+    /*
     @Value("${embedded_ldap.urls:ldaps://localhost:389/}")
     String embedded_ldap_url;
     @Value("${embedded_ldap.base.dn}")
@@ -93,6 +86,8 @@ public class WebSecurityConfig {
     String embedded_ldap_groups_search_base;
     @Value("${embedded_ldap.groups.search.pattern}")
     String embedded_ldap_groups_search_pattern;
+
+     */
 
     /**
      * Authentication implementation.
@@ -226,46 +221,52 @@ public class WebSecurityConfig {
 
      */
 
-
-
     @Bean
-    @ConditionalOnProperty(value = "auth.impl", havingValue = "ldap_embedded")
-    public DefaultSpringSecurityContextSource contextSourceFactoryBean() {
-        DefaultSpringSecurityContextSource contextSourceFactoryBean = new DefaultSpringSecurityContextSource(embedded_ldap_url);
-        contextSourceFactoryBean.afterPropertiesSet();
-        return contextSourceFactoryBean;
+    @Conditional(AuthenticationPolicyCondition.class)
+    public DefaultSpringSecurityContextSource contextSourceFactoryBeanLdap() {
+        DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(ldap_url);
+        if (ldap_manager_dn != null && !ldap_manager_dn.isEmpty() && ldap_manager_password != null && !ldap_manager_password.isEmpty()) {
+            contextSource.setUserDn(ldap_manager_dn);
+            contextSource.setPassword(ldap_manager_password);
+        }
+        contextSource.setBase(ldap_base_dn);
+        contextSource.afterPropertiesSet();
+        return contextSource;
     }
 
-    /*
     @Bean
-    public EmbeddedLdapServerContextSourceFactoryBean contextSourceFactoryBeanEmbeddedLdap() throws Exception{
-        EmbeddedLdapServerContextSourceFactoryBean contextSourceFactoryBean =
-                EmbeddedLdapServerContextSourceFactoryBean.fromEmbeddedLdapServer();
-        return contextSourceFactoryBean;
-    }
-    */
-
-
-    @Bean
-    @ConditionalOnProperty(value = "auth.impl", havingValue = "ldap_embedded")
+    @Conditional(AuthenticationPolicyCondition.class)
     public AuthenticationManager ldapAuthenticationManager(
             BaseLdapPathContextSource contextSource) {
         LdapBindAuthenticationManagerFactory factory =
                 new LdapBindAuthenticationManagerFactory(contextSource);
-        factory.setUserDnPatterns(embedded_ldap_user_dn_pattern);
+        factory.setUserDnPatterns(ldap_user_dn_pattern);
         factory.setUserDetailsContextMapper(new PersonContextMapper());
+
         factory.setLdapAuthoritiesPopulator(authorities(contextSource));
-        return factory.createAuthenticationManager();
+        AuthenticationManager authenticationManager = factory.createAuthenticationManager();
+        return authenticationManager;
     }
 
     @Bean
-    @ConditionalOnProperty(value = "auth.impl", havingValue = "ldap_embedded")
+    @Conditional(AuthenticationPolicyCondition.class)
     public LdapAuthoritiesPopulator authorities(BaseLdapPathContextSource contextSource) {
         String groupSearchBase = "";
-        DefaultLdapAuthoritiesPopulator myAuthPopulator = new DefaultLdapAuthoritiesPopulator(contextSource, embedded_ldap_groups_search_base);
-        myAuthPopulator.setGroupSearchFilter(embedded_ldap_groups_search_pattern);
+        DefaultLdapAuthoritiesPopulator myAuthPopulator = new DefaultLdapAuthoritiesPopulator(contextSource, ldap_groups_search_base);
+        myAuthPopulator.setGroupSearchFilter(ldap_groups_search_pattern);
         myAuthPopulator.setSearchSubtree(true);
         myAuthPopulator.setIgnorePartialResultException(true);
+        LdapAuthenticationProviderConfigurer configurer = new LdapAuthenticationProviderConfigurer();
+        if (ldap_user_dn_pattern != null && !ldap_user_dn_pattern.isEmpty()) {
+            configurer.userDnPatterns(ldap_user_dn_pattern);
+        }
+        if (ldap_user_search_filter != null && !ldap_user_search_filter.isEmpty()) {
+            configurer.userSearchFilter(ldap_user_search_filter);
+        }
+        if (ldap_user_search_base != null && !ldap_user_search_base.isEmpty()) {
+            configurer.userSearchBase(ldap_user_search_base);
+        }
+        configurer.contextSource(contextSource);
         return myAuthPopulator;
     }
 
@@ -372,5 +373,13 @@ public class WebSecurityConfig {
                 "ROLE_" + roleSuperuser.toUpperCase() + " > ROLE_" + roleUser.toUpperCase() + "\n" +
                 "ROLE_" + roleAdmin.toUpperCase() + " > ROLE_" + roleUser.toUpperCase());
         return hierarchy;
+    }
+
+    private static class AuthenticationPolicyCondition implements Condition {
+        @Override
+        public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+            String testValue = context.getEnvironment().getProperty("auth.impl");
+            return "ldap".equals(testValue) || "ldap_embedded".equals(testValue);
+        }
     }
 }
