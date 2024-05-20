@@ -254,7 +254,6 @@
               <configuration>
                 <!-- add this to disable checking -->
                 <doclint>none</doclint>
-                <source>11</source>
               </configuration>
             </execution>
           </executions>
